@@ -98,9 +98,9 @@ void Scheduler::run()
         bool isActive = false;
         {
             AutoLock<Mutex> lock(mMutex);
-            auto it = mFibers.begin();
-            while (it != mFibers.end()) {
-                if (it->thread != -1 && it->thread != gettid()) {
+            auto it = mFiberQueue.begin();
+            while (it != mFiberQueue.end()) {
+                if (it->thread != -1 && it->thread != gettid()) {   // 不满足线程ID一致的条件
                     ++it;
                     needTickle = true;
                     continue;
@@ -114,12 +114,12 @@ void Scheduler::run()
 
                 // 找到可执行的任务
                 ft = *it;
-                mFibers.erase(it++);
+                mFiberQueue.erase(it++);
                 ++mActiveThreadCount;
                 isActive = true;
                 break;
             }
-            needTickle |= it != mFibers.end();
+            needTickle |= it != mFiberQueue.end();
         }
 
         if (needTickle) {
@@ -129,7 +129,7 @@ void Scheduler::run()
         if (ft.fiberPtr && (ft.fiberPtr->getState() != Fiber::EXEC && ft.fiberPtr->getState() != Fiber::EXCEPT)) {
             ft.fiberPtr->resume();
             --mActiveThreadCount;
-            if (ft.fiberPtr->getState() == Fiber::READY) {  // 用户主动设置协程状态位REDAY/
+            if (ft.fiberPtr->getState() == Fiber::READY) {  // 用户主动设置协程状态为REDAY
                 schedule(ft.fiberPtr);
             } else if (ft.fiberPtr->getState() != Fiber::TERM &&
                        ft.fiberPtr->getState() != Fiber::EXCEPT) {

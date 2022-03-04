@@ -77,10 +77,10 @@ private:
 
     template<class FiberOrCb>
     bool scheduleNoLock(FiberOrCb fc, int thread) {
-        bool needTickle = mFibers.empty();
+        bool needTickle = mFiberQueue.empty();
         FiberBindThread ft(fc, thread);
         if(ft.fiber || ft.cb) {
-            mFibers.push_back(ft);
+            mFiberQueue.push_back(ft);
         }
         return needTickle;
     }
@@ -108,7 +108,7 @@ private:
     std::string             mName;              // 调度器名字
     eular::Mutex            mMutex;             // 任务队列锁
     Fiber::SP               mRootFiber;         // userCaller为true时有效
-    std::list<FiberBindThread> mFibers;         // 待执行的协程队列
+    std::list<FiberBindThread> mFiberQueue;         // 待执行的协程队列
 };
 
 } // namespace eular
