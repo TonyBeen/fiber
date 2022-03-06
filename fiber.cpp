@@ -23,8 +23,8 @@ static thread_local Fiber::SP gThreadMainFiber = nullptr;   // 一个线程的�
 
 uint64_t getStackSize()
 {
+    // TODO: 从配置文件中获取栈大小
     static uint64_t size = 1024 * 1024;
-    // size = Config::Lookup<uint64_t>("fiber.stack_size", 1024 * 1024);
     return size;
 }
 
