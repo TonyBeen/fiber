@@ -14,8 +14,8 @@
 
 namespace eular {
 
-static thread_local Thread *gThread = nullptr;  // 当前线程
-static thread_local eular::String8 gThreadName;    // 当前线程名字
+static thread_local Thread *gThread = nullptr;      // 当前线程
+static thread_local eular::String8 gThreadName;     // 当前线程名字
 
 Thread::Thread(std::function<void()> cb, const eular::String8 &threadName, uint32_t stackSize) :
     mName(threadName.length() ? threadName : "Unknow"),

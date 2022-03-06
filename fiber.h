@@ -41,6 +41,7 @@ public:
     static void         Yeild2Hold();       // 将当前正在执行的协程让出执行权给主协程，并设置状态为HOLD
     static void         Yeild2Ready();      // 将当前正在执行的协程让出执行权给主协程，并设置状态为READY
     FiberState          getState();         // 获取执行状态
+    static uint64_t     GetFiberID();       // 获取当前协程ID
 
 private:
     Fiber();                    // 线程的第一个协程调用

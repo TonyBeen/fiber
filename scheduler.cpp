@@ -9,7 +9,6 @@
 #include <utils/utils.h>
 #include <log/log.h>
 
-
 #define LOG_TAG "scheduler"
 
 namespace eular {

@@ -14,6 +14,7 @@ using namespace eular;
 void test()
 {
     printf("%s() tid: %ld\n", __func__, gettid());
+    printf("%s() fiber id %lu\n", __func__, Fiber::GetFiberID());
 }
 
 int main(int argc, char **argv)
@@ -23,10 +24,9 @@ int main(int argc, char **argv)
 
     scheduler.schedule(std::bind(&test));
 
-    while (1) {
-        printf("main sleep 1s\n");
-        sleep(1);
-    }
+    printf("main fiber state: %d\n", Fiber::GetThis()->getState());
+
+    Scheduler::GetMainFiber()->resume();
 
     return 0;
 }

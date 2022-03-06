@@ -17,7 +17,7 @@ namespace eular{
 static std::atomic<uint64_t> gFiberId(0);       // 协程ID
 static std::atomic<uint64_t> gFiberCount(0);    // 当前协程总数
 
-static thread_local Fiber *gCurrentFiber = nullptr;            // 当前正在执行的协程
+static thread_local Fiber *gCurrentFiber = nullptr;         // 当前正在执行的协程
 static thread_local Fiber::SP gThreadMainFiber = nullptr;   // 一个线程的主协程
 
 uint64_t getStackSize()
@@ -75,7 +75,7 @@ Fiber::Fiber(std::function<void()> cb, uint64_t stackSize) :
     mCtx.uc_link = nullptr;
     makecontext(&mCtx, &FiberEntry, 0);
 
-    LOGD("Fiber::Fiber(std::function<void()>, uint64_t) id = %lu, total = %d start",
+    LOGD("Fiber::Fiber(std::function<void()>, uint64_t) id = %lu, total = %d",
         mFiberId, gFiberCount.load());
 }
 
@@ -190,6 +190,14 @@ void Fiber::Yeild2Ready()
 Fiber::FiberState Fiber::getState()
 {
     return mState;
+}
+
+uint64_t Fiber::GetFiberID()
+{
+    if (gCurrentFiber) {
+        return gCurrentFiber->mFiberId;
+    }
+    return 0;
 }
 
 void Fiber::FiberEntry()
