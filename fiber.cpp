@@ -118,15 +118,15 @@ void Fiber::swapIn()
     SetThis(this);
     LOG_ASSERT(mState != EXEC, "");
     mState = EXEC;
-    if (swapcontext(&Scheduler::GetMainFiber()->mCtx, &mCtx)) {
+    if (swapcontext(&gThreadMainFiber->mCtx, &mCtx)) {
         LOG_ASSERT(false, "swapIn() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
     }
 }
 
 void Fiber::swapOut()
 {
-    SetThis(Scheduler::GetMainFiber());
-    if (swapcontext(&mCtx, &Scheduler::GetMainFiber()->mCtx)) {
+    SetThis(gThreadMainFiber.get());
+    if (swapcontext(&mCtx, &gThreadMainFiber->mCtx)) {
         LOG_ASSERT(false, "swapIn() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
     }
 }
@@ -210,7 +210,8 @@ void Fiber::FiberEntry()
     }
 
     Fiber *ptr = curr.get();
-    curr.reset();
+    curr.reset();   // 必须调用reset，否则shared_ptr会一直增一，因为未超出作用域
+    LOG_ASSERT(ptr != nullptr, "will never be null to reach here");
     ptr->swapOut();
 
     LOG_ASSERT(false, "never reach here");
