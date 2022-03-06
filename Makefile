@@ -37,4 +37,4 @@ debug :
 	@echo $(PWD)
 
 clean :
-	rm -rf $(OBJ_LIST)
+	rm -rf $(OBJ_LIST) main test_thread test_fiber
