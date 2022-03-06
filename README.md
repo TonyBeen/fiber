@@ -10,6 +10,7 @@
 `thread是实现的线程逻辑，与std::thread类似;`
 
 编写时继承Scheduler后再重写虚函数即可
+
 IOManager暂时还未想好怎么使用.
 #### 测试结果
 ![fiber test](./fiber%20test.png)
