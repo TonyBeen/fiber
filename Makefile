@@ -6,13 +6,13 @@ PWD = $(shell pwd)
 INCLUDE = -I$(PWD)
 LIB_LIST = -lutils -llog -lpthread
 
-SRC_LIST :			\
+SRC_LIST =			\
 	thread.cpp		\
 	fiber.cpp		\
 	scheduler.cpp	\
 	iomanager.cpp
 
-OBJ_LIST :			\
+OBJ_LIST =			\
 	thread.o		\
 	fiber.o			\
 	scheduler.o		\
@@ -35,6 +35,8 @@ test_fiber : test_fiber.cc fiber.cpp scheduler.cpp thread.cpp
 
 debug :
 	@echo $(PWD)
+	@echo $(SRC_LIST)
+	@echo $(OBJ_LIST)
 
 clean :
 	rm -rf $(OBJ_LIST) main test_thread test_fiber
