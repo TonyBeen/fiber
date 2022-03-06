@@ -30,7 +30,7 @@ test_fiber : test_fiber.cc fiber.cpp scheduler.cpp thread.cpp
 %.o : %.cpp
 	$(CC) -c $^ -o $@ $(CPPFLAGS) $(INCLUDE)
 
-.PHONY :
+.PHONY :	\
 	main test_thread test_fiber debug
 
 debug :

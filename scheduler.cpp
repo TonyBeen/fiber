@@ -19,8 +19,8 @@ static thread_local Fiber *gMainFiber = nullptr;        // 调度器的主协程
 
 Scheduler::Scheduler(uint32_t threads, bool useCaller, const eular::String8 &name) :
     mContainUserCaller(useCaller),
-    mName(name),
-    mStopping(true)
+    mStopping(true),
+    mName(name)
 {
     LOG_ASSERT(threads > 0, "%s %s:%s() Invalid Param", __FILE__, __LINE__, __func__);
     if (useCaller) {
@@ -166,7 +166,7 @@ void Scheduler::run()
                 }
 
                 // 找到可执行的任务
-                LOGD("找到可执行的任务");
+                LOGD("Find executable tasks");
                 ft = *it;
                 mFiberQueue.erase(it++);
                 ++mActiveThreadCount;
