@@ -135,7 +135,6 @@ void Scheduler::switchTo(int th)
 void Scheduler::run()
 {
     LOGI("Scheduler::run() in %s:%d", Thread::GetName().c_str(), gettid());
-    // hook_enable();
     setThis();
     if (gettid() != mRootThread) {
         gMainFiber = Fiber::GetThis().get();
@@ -165,7 +164,6 @@ void Scheduler::run()
                     continue;
                 }
 
-                // 找到可执行的任务
                 LOGD("Find executable tasks");
                 ft = *it;
                 mFiberQueue.erase(it++);

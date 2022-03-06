@@ -6,7 +6,6 @@
  ************************************************************************/
 
 #include "fiber.h"
-#include "scheduler.h"
 #include <log/log.h>
 #include <atomic>
 #include <exception>
