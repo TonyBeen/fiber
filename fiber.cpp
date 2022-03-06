@@ -18,7 +18,7 @@ namespace eular{
 static std::atomic<uint64_t> gFiberId(0);       // 协程ID
 static std::atomic<uint64_t> gFiberCount(0);    // 当前协程总数
 
-static thread_local Fiber *gCurrFiber = nullptr;            // 当前正在执行的协程
+static thread_local Fiber *gCurrentFiber = nullptr;            // 当前正在执行的协程
 static thread_local Fiber::SP gThreadMainFiber = nullptr;   // 一个线程的主协程
 
 uint64_t getStackSize()
@@ -90,7 +90,7 @@ Fiber::~Fiber()
         Allocator::dealloc(mStack, mStackSize);
     } else {    // main fiber
         LOG_ASSERT(!mCb, "");
-        if (gCurrFiber == this) {
+        if (gCurrentFiber == this) {
             SetThis(nullptr);
         }
     }
@@ -133,19 +133,19 @@ void Fiber::swapOut()
 
 void Fiber::SetThis(Fiber *f)
 {
-    gCurrFiber = f;
+    gCurrentFiber = f;
 }
 
 Fiber::SP Fiber::GetThis()
 {
-    if (gCurrFiber) {
-        return gCurrFiber->shared_from_this();
+    if (gCurrentFiber) {
+        return gCurrentFiber->shared_from_this();
     }
     Fiber::SP fiber(new Fiber());
-    LOG_ASSERT(fiber.get() == gCurrFiber, "");
+    LOG_ASSERT(fiber.get() == gCurrentFiber, "");
     gThreadMainFiber = fiber;
     LOG_ASSERT(gThreadMainFiber, "");
-    return gCurrFiber->shared_from_this();
+    return gCurrentFiber->shared_from_this();
 }
 
 void Fiber::call()
