@@ -6,6 +6,7 @@
  ************************************************************************/
 
 #include "fiber.h"
+#include "scheduler.h"
 #include <log/log.h>
 #include <atomic>
 #include <exception>
@@ -112,26 +113,20 @@ void Fiber::reset(std::function<void()> cb)
     mState = READY;
 }
 
-/**
- * 外部调用时
- * 同一个线程应使SwapIn的调用次数比Yeild调用次数多一，如果多二则会在FiberEntry结尾处退出线程
- * 如果不多一则会使智能指针的引用计数大于1，导致释放不干净，原因是FiberEntry的回调未执行完毕，
- * 即最后一次Yeild操作保存了堆栈，使得在栈上的智能指针无法释放
- */
 void Fiber::swapIn()
 {
     SetThis(this);
     LOG_ASSERT(mState != EXEC, "");
     mState = EXEC;
-    if (swapcontext(&gThreadMainFiber->mCtx, &mCtx)) {
+    if (swapcontext(&Scheduler::GetMainFiber()->mCtx, &mCtx)) {
         LOG_ASSERT(false, "swapIn() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
     }
 }
 
 void Fiber::swapOut()
 {
-    SetThis(gThreadMainFiber.get());
-    if (swapcontext(&mCtx, &gThreadMainFiber->mCtx)) {
+    SetThis(Scheduler::GetMainFiber());
+    if (swapcontext(&mCtx, &Scheduler::GetMainFiber()->mCtx)) {
         LOG_ASSERT(false, "swapIn() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
     }
 }
@@ -151,6 +146,23 @@ Fiber::SP Fiber::GetThis()
     gThreadMainFiber = fiber;
     LOG_ASSERT(gThreadMainFiber, "");
     return gCurrFiber->shared_from_this();
+}
+
+void Fiber::call()
+{
+    SetThis(this);
+    mState = EXEC;
+    if (swapcontext(&gThreadMainFiber->mCtx, &mCtx)) {
+        LOG_ASSERT(false, "call() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
+    }
+}
+
+void Fiber::back()
+{
+    SetThis(gThreadMainFiber.get());
+    if (swapcontext(&mCtx, &gThreadMainFiber->mCtx)) {
+        LOG_ASSERT(false, "back() id = %d, errno = %d, %s", mFiberId, errno, strerror(errno));
+    }
 }
 
 void Fiber::resume()
@@ -174,6 +186,11 @@ void Fiber::Yeild2Ready()
     LOG_ASSERT(ptr->mState == EXEC, "");
     ptr->mState = READY;
     ptr->swapOut();
+}
+
+Fiber::FiberState Fiber::getState()
+{
+    return mState;
 }
 
 void Fiber::FiberEntry()

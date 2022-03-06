@@ -15,12 +15,12 @@
 namespace eular {
 
 static thread_local Scheduler *gScheduler = nullptr;    // 线程调度器
-static thread_local Fiber *gMainFiber = nullptr;        // 线程的主协程
+static thread_local Fiber *gMainFiber = nullptr;        // 调度器的主协程
 
-Scheduler::Scheduler(uint32_t threads, bool useCaller, const std::string &name) :
+Scheduler::Scheduler(uint32_t threads, bool useCaller, const eular::String8 &name) :
     mContainUserCaller(useCaller),
     mName(name),
-    mStoped(true)
+    mStopping(true)
 {
     LOG_ASSERT(threads > 0, "%s %s:%s() Invalid Param", __FILE__, __LINE__, __func__);
     if (useCaller) {
@@ -31,6 +31,7 @@ Scheduler::Scheduler(uint32_t threads, bool useCaller, const std::string &name) 
         mRootFiber.reset(new Fiber(std::bind(&Scheduler::run, this)));
         Thread::SetName(name);
 
+        LOGD("root thread id %ld", gettid());
         mThreadIds.push_back(gettid());
         gMainFiber = mRootFiber.get();
         mRootThread = gettid();
@@ -43,9 +44,11 @@ Scheduler::Scheduler(uint32_t threads, bool useCaller, const std::string &name) 
 
 Scheduler::~Scheduler()
 {
-
+    LOG_ASSERT(mStopping, "You should call stop before deconstruction");
+    if (gScheduler == this) {
+        gScheduler = nullptr;
+    }
 }
-
 
 Scheduler *Scheduler::GetThis()
 {
@@ -57,15 +60,14 @@ Fiber *Scheduler::GetMainFiber()
     return gMainFiber;
 }
 
-
 void Scheduler::start()
 {
     AutoLock<Mutex> lock(mMutex);
-    if (!mStoped) {
+    if (!mStopping) {
         return;
     }
 
-    mStoped = false;
+    mStopping = false;
     LOG_ASSERT(mThreads.empty(), "should be empty before start()");
     mThreads.resize(mThreadCount);
     for (size_t i = 0; i < mThreadCount; ++i) {
@@ -77,7 +79,57 @@ void Scheduler::start()
 
 void Scheduler::stop()
 {
+    if (mRootFiber && mThreadCount == 0 && 
+        mRootFiber->getState() == Fiber::TERM) {
+        LOGI("%s()", __func__);
 
+        if (stopping()) {
+            return;
+        }
+    }
+
+    if (mRootThread != -1) {
+        LOG_ASSERT(GetThis() == this, "");
+    } else {
+        LOG_ASSERT(GetThis() != this, "");
+    }
+
+    mStopping = true;
+    for (size_t i = 0; i < mThreadCount; ++i) {
+        tickle();
+    }
+
+    if (mRootFiber) {
+        tickle();
+    }
+
+    if (mRootFiber && !stopping()) {
+        mRootFiber->call();
+    }
+
+    std::vector<Thread::SP> threads;
+    {
+        AutoLock<Mutex> lock(mMutex);
+        threads.swap(mThreads);
+    }
+
+    for (auto &it : threads) {
+        it->join();
+    }
+}
+
+// 将当前协程切换到th线程
+void Scheduler::switchTo(int th)
+{
+    LOG_ASSERT(Scheduler::GetThis() != nullptr, "");
+    if (Scheduler::GetThis() == this) {
+        if (th == -1 || th == gettid()) {
+            return;
+        }
+    }
+
+    schedule(Fiber::GetThis(), th);
+    Fiber::Yeild2Hold();
 }
 
 void Scheduler::run()
@@ -107,12 +159,14 @@ void Scheduler::run()
                 }
 
                 LOG_ASSERT(it->fiberPtr || it->cb, "task can not be null");
-                if (it->fiberPtr && it->fiberPtr->getState() == Fiber::EXEC) {
+                // TODO: 处于队列中的协程能否处于可执行态呢?
+                if (it->fiberPtr && it->fiberPtr->getState() == Fiber::EXEC) {  // 找到的协程处于执行状态
                     ++it;
                     continue;
                 }
 
                 // 找到可执行的任务
+                LOGD("找到可执行的任务");
                 ft = *it;
                 mFiberQueue.erase(it++);
                 ++mActiveThreadCount;
@@ -127,6 +181,7 @@ void Scheduler::run()
         }
 
         if (ft.fiberPtr && (ft.fiberPtr->getState() != Fiber::EXEC && ft.fiberPtr->getState() != Fiber::EXCEPT)) {
+            // TODO: 记录线程开始执行时间，超阈值后杀死线程
             ft.fiberPtr->resume();
             --mActiveThreadCount;
             if (ft.fiberPtr->getState() == Fiber::READY) {  // 用户主动设置协程状态为REDAY
@@ -143,17 +198,40 @@ void Scheduler::run()
                 cbFiber.reset(new Fiber(ft.cb));
                 LOG_ASSERT(cbFiber != nullptr, "");
             }
+            ft.reset();
+            cbFiber->resume();
+            --mActiveThreadCount;
+            if (cbFiber->getState() == Fiber::READY) {
+                schedule(cbFiber);
+                cbFiber.reset();
+            } else if (cbFiber->getState() == Fiber::EXCEPT ||
+                    cbFiber->getState() == Fiber::TERM) {
+                cbFiber->reset(nullptr);
+            } else {
+                cbFiber->mState = Fiber::HOLD;
+                cbFiber.reset();
+            }
+        } else {
+            if (isActive) {
+                --mActiveThreadCount;
+                continue;
+            }
+
+            if (idleFiber->getState() == Fiber::TERM) {
+                LOGI("idle fiber term");
+                break;
+            }
+
+            ++mIdleThreadCount;
+            idleFiber->resume();
+            --mIdleThreadCount;
+            if (idleFiber->getState() != Fiber::TERM && 
+                idleFiber->getState() != Fiber::EXCEPT) {
+                idleFiber->mState = Fiber::HOLD;
+            }
         }
-        ft.reset();
-        cbFiber->resume();
-        --mActiveThreadCount;
-        if (cbFiber->getState() == Fiber::READY) {
-            schedule(cbFiber);
-            cbFiber.reset();
-        } else if (cbFiber->getState() == Fiber::EXCEPT ||
-                   cbFiber->getState() == Fiber::TERM) {
-            cbFiber->reset(nullptr);
-        }
+
+        sleep(1);
     }
 }
 
@@ -164,7 +242,21 @@ void Scheduler::setThis()
 
 void Scheduler::idle()
 {
+    while (!stopping()) {
+        LOGI("%s()", __func__);
+        Fiber::Yeild2Hold();
+    }
+}
 
+void Scheduler::tickle()
+{
+    LOGI("%s()", __func__);
+}
+
+bool Scheduler::stopping()
+{
+    AutoLock<Mutex> lock(mMutex);
+    return mStopping && mFiberQueue.empty() && mActiveThreadCount == 0;
 }
 
 } // namespace eular

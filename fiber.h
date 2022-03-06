@@ -17,7 +17,7 @@ namespace eular {
 class Scheduler;
 /**
  * @brief 协程类
- */ 
+ */
 class Fiber : public std::enable_shared_from_this<Fiber>
 {
 public:
@@ -35,7 +35,9 @@ public:
            void         reset(std::function<void()> cb);
     static void         SetThis(Fiber *f);  // 设置当前正在执行的协程
     static Fiber::SP    GetThis();          // 获取当前正在执行的协程
-           void         resume();           // 唤醒协程
+           void         call();             // 唤醒当前线程的协程
+           void         back();             // 将当前线程的协程切到后台
+           void         resume();           // 唤醒协程调度器的主协程
     static void         Yeild2Hold();       // 将当前正在执行的协程让出执行权给主协程，并设置状态为HOLD
     static void         Yeild2Ready();      // 将当前正在执行的协程让出执行权给主协程，并设置状态为READY
     FiberState          getState();         // 获取执行状态
@@ -54,16 +56,6 @@ private:
     void *          mStack;
     std::function<void()> mCb;
     friend class Scheduler;
-};
-
-/**
- * @brief 协程管理类
- */ 
-class Scheduler
-{
-public:
-    Scheduler() {}
-    ~Scheduler() {}
 };
 
 } // namespace eular

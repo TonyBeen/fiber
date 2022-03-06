@@ -30,7 +30,7 @@ public:
      * @param useCaller 是否包含用户调用线程
      * @param name 调度器名字
      */
-    Scheduler(uint32_t threads = 1, bool useCaller = true, const std::string &name = "");
+    Scheduler(uint32_t threads = 1, bool useCaller = true, const eular::String8 &name = "");
     virtual ~Scheduler();
 
     String8 getName() const { return mName; }
@@ -40,18 +40,27 @@ public:
     void start();
     void stop();
 
+
+    /**
+     * @brief 调度函数
+     * 
+     * @param fc 协程或回调函数
+     * @param th 线程ID
+     */
     template<class FiberOrCb>
     void schedule(FiberOrCb fc, int th = -1)
     {
         bool needTickle = false;
         {
             AutoLock<Mutex> lock(mMutex);
-            scheduleNoLock(fc, th);
+            needTickle = scheduleNoLock(fc, th);
         }
         if (needTickle) {
             tickle();
         }
     }
+
+    void switchTo(int th = -1);
 
 private:
     /**
@@ -79,7 +88,7 @@ private:
     bool scheduleNoLock(FiberOrCb fc, int thread) {
         bool needTickle = mFiberQueue.empty();
         FiberBindThread ft(fc, thread);
-        if(ft.fiber || ft.cb) {
+        if(ft.fiberPtr || ft.cb) {
             mFiberQueue.push_back(ft);
         }
         return needTickle;
@@ -89,8 +98,17 @@ private:
 protected:
     void run();
     void setThis();
-    void idle();
+
+    /**
+     * @brief 线程空闲时执行idle协程
+     */
+    virtual void idle();
+
+    /**
+     * @brief 通知协程调度器有新任务
+     */
     virtual void tickle();
+    virtual bool stopping();
 
 
 protected:
@@ -99,16 +117,16 @@ protected:
     uint32_t                mThreadCount;       // 线程数量
     uint8_t                 mContainUserCaller; // 是否包含用户线程
     int                     mRootThread;        // userCaller为true时，为用户调用线程ID，false为-1
-    bool                    mStoped;            // 是否停止
+    bool                    mStopping;          // 是否停止
 
     std::atomic<uint32_t>   mActiveThreadCount = {0};
     std::atomic<uint32_t>   mIdleThreadCount = {0};
 
 private:
-    std::string             mName;              // 调度器名字
+    eular::String8          mName;              // 调度器名字
     eular::Mutex            mMutex;             // 任务队列锁
     Fiber::SP               mRootFiber;         // userCaller为true时有效
-    std::list<FiberBindThread> mFiberQueue;         // 待执行的协程队列
+    std::list<FiberBindThread> mFiberQueue;     // 待执行的协程队列
 };
 
 } // namespace eular

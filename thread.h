@@ -15,17 +15,19 @@
 #include <functional>
 #include <memory>
 
+namespace eular {
+
 class Thread
 {
 public:
     typedef std::shared_ptr<Thread> SP;
-    Thread(std::function<void()> cb, const std::string &threadName = "", uint32_t stackSize = 0);
+    Thread(std::function<void()> cb, const eular::String8 &threadName = "", uint32_t stackSize = 0);
     ~Thread();
 
-    static void         SetName(std::string name);
-    static std::string  GetName();
+    static void         SetName(eular::String8 name);
+    static String8      GetName();
     static Thread *     GetThis();
-    std::string         getName() const { return mName; }
+    eular::String8      getName() const { return mName; }
     pid_t               getTid() const { return mKernalTid; };
 
     void detach();
@@ -37,10 +39,12 @@ protected:
 private:
     pid_t                   mKernalTid;     // 内核tid
     pthread_t               mTid;           // pthread线程ID
-    std::string             mName;
+    eular::String8          mName;
     std::function<void()>   mCb;            // 线程执行函数
     uint8_t                 mShouldJoin;    // 1为由用户回收线程，0为自动回收
     eular::Sem              mSemaphore;     // 等待mKernalTid赋值
 };
+
+} // namespace eular
 
 #endif // __THREAD_H__

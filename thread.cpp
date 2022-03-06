@@ -12,10 +12,12 @@
 
 #define LOG_TAG "Thread"
 
-static thread_local Thread *gThread = nullptr;  // 当前线程
-static thread_local std::string gThreadName;    // 当前线程名字
+namespace eular {
 
-Thread::Thread(std::function<void()> cb, const std::string &threadName, uint32_t stackSize) :
+static thread_local Thread *gThread = nullptr;  // 当前线程
+static thread_local eular::String8 gThreadName;    // 当前线程名字
+
+Thread::Thread(std::function<void()> cb, const eular::String8 &threadName, uint32_t stackSize) :
     mName(threadName.length() ? threadName : "Unknow"),
     mCb(cb),
     mShouldJoin(true),
@@ -43,9 +45,9 @@ Thread::~Thread()
     }
 }
 
-void Thread::SetName(std::string name)
+void Thread::SetName(eular::String8 name)
 {
-    if (name.empty()) {
+    if (name.isEmpty()) {
         return;
     }
     if (gThread) {
@@ -54,7 +56,7 @@ void Thread::SetName(std::string name)
     gThreadName = name;
 }
 
-std::string Thread::GetName()
+eular::String8 Thread::GetName()
 {
     return gThreadName;
 }
@@ -93,7 +95,7 @@ void *Thread::entrance(void *arg)
     gThread->mKernalTid = gettid();
     gThread->mSemaphore.post();
 
-    pthread_setname_np(pthread_self(), th->mName.substr(0, 15).c_str());
+    pthread_setname_np(pthread_self(), th->mName.c_str());
 
     std::function<void()> cb;
     cb.swap(th->mCb);
@@ -101,3 +103,5 @@ void *Thread::entrance(void *arg)
     cb();
     return nullptr;
 }
+
+} // namespace eular

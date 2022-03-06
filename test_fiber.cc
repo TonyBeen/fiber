@@ -17,9 +17,6 @@ using namespace eular;
 void test_fiber()
 {
     LOGD("test_fiber begin");
-    LOGD("test_fiber stop");
-    Fiber::Yeild2Hold();
-    LOGD("test_fiber begin");
     LOGD("test_fiber end");
 }
 
@@ -29,10 +26,7 @@ int main(int argc, char **argv)
     Fiber::SP fiber(new Fiber(test_fiber));
 
     LOG_ASSERT(fiber != nullptr, "");
-    fiber->resume();
-
-    LOGD("%s() excute", __func__);
-    fiber->resume();
+    fiber->call();
     
     // fiber->resume();     // 此处调用会使FiberEntry执行完毕，所以保持resume次数比Yeild操作多一即可
     return 0;
