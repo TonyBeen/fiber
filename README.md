@@ -10,4 +10,8 @@ thread是实现的线程逻辑，与std::thread类似
 
 编写时继承Scheduler后再重写虚函数即可
 
+#### 测试结果
+![fiber test](./fiber%20test.png)
+
+
 ##### 代码参考了[sylar](https://github.com/sylar-yin/sylar)，算是一个协程提取，其中也有疑惑的点
