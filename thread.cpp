@@ -95,7 +95,7 @@ void *Thread::entrance(void *arg)
     gThread->mKernalTid = gettid();
     gThread->mSemaphore.post();
 
-    pthread_setname_np(pthread_self(), th->mName.c_str());
+    pthread_setname_np(pthread_self(), th->mName.substr(0, 15).c_str());
 
     std::function<void()> cb;
     cb.swap(th->mCb);
