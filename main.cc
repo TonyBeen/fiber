@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     Scheduler scheduler(2, true, "main");
     scheduler.start();
 
-    scheduler.schedule(std::bind(&test));
+    scheduler.schedule(std::bind(&test), gettid());
 
     printf("main fiber state: %d\n", Fiber::GetThis()->getState());
 

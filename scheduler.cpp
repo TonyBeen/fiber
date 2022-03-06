@@ -240,7 +240,7 @@ void Scheduler::setThis()
 void Scheduler::idle()
 {
     while (!stopping()) {
-        LOGI("%s()", __func__);
+        LOGI("%s() fiber id: %lu", __func__, Fiber::GetFiberID());
         Fiber::Yeild2Hold();
     }
 }
