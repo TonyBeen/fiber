@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     scheduler.schedule(std::bind(&test), gettid());
 
-    printf("main fiber state: %d\n", Fiber::GetThis()->getState());
+    printf("main fiber id: %lu\n", Fiber::GetThis()->GetFiberID());
 
     Scheduler::GetMainFiber()->resume();
 
