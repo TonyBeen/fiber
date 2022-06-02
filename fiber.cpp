@@ -193,6 +193,32 @@ Fiber::FiberState Fiber::getState()
     return mState;
 }
 
+std::string Fiber::state2str()
+{
+    std::string st = "UNKNOW";
+    switch (mState) {
+        case Fiber::READY:
+            st = "READY";
+            break;
+        case Fiber::HOLD:
+            st = "HOLD";
+            break;
+        case Fiber::EXEC:
+            st = "EXEC";
+            break;
+        case Fiber::EXCEPT:
+            st = "EXCEPT";
+            break;
+        case Fiber::TERM:
+            st = "TERM";
+            break;
+        default:
+            break;
+    }
+
+    return st;
+}
+
 uint64_t Fiber::GetFiberID()
 {
     if (gCurrentFiber) {

@@ -12,6 +12,7 @@
 #include <ucontext.h>
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace eular {
 class Scheduler;
@@ -41,6 +42,7 @@ public:
     static void         Yeild2Hold();       // 将当前正在执行的协程让出执行权给主协程，并设置状态为HOLD
     static void         Yeild2Ready();      // 将当前正在执行的协程让出执行权给主协程，并设置状态为READY
     FiberState          getState();         // 获取执行状态
+    std::string         state2str();        // 获取当前协程状态
     static uint64_t     GetFiberID();       // 获取当前协程ID
 
 private:

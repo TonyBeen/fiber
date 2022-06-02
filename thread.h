@@ -27,7 +27,7 @@ public:
     static void         SetName(eular::String8 name);
     static String8      GetName();
     static Thread *     GetThis();
-    eular::String8      getName() const { return mName; }
+    eular::String8      getName() const { return mThreadName; }
     pid_t               getTid() const { return mKernalTid; };
 
     void detach();
@@ -39,7 +39,7 @@ protected:
 private:
     pid_t                   mKernalTid;     // 内核tid
     pthread_t               mTid;           // pthread线程ID
-    eular::String8          mName;
+    eular::String8          mThreadName;
     std::function<void()>   mCb;            // 线程执行函数
     uint8_t                 mShouldJoin;    // 1为由用户回收线程，0为自动回收
     eular::Sem              mSemaphore;     // 等待mKernalTid赋值

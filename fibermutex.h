@@ -8,7 +8,7 @@
 #ifndef __EULAR_P2P_CORE_FIBER_MUTEX_H__
 #define __EULAR_P2P_CORE_FIBER_MUTEX_H__
 
-#include "fiber/scheduler.h"
+#include "scheduler.h"
 #include <utils/mutex.h>
 #include <list>
 #include <stl_pair.h>

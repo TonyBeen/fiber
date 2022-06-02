@@ -18,7 +18,7 @@ static thread_local Thread *gThread = nullptr;      // 当前线程
 static thread_local eular::String8 gThreadName;     // 当前线程名字
 
 Thread::Thread(std::function<void()> cb, const eular::String8 &threadName, uint32_t stackSize) :
-    mName(threadName.length() ? threadName : "Unknow"),
+    mThreadName(threadName.length() ? threadName : "Unknow"),
     mCb(cb),
     mShouldJoin(true),
     mSemaphore(0)
@@ -51,7 +51,7 @@ void Thread::SetName(eular::String8 name)
         return;
     }
     if (gThread) {
-        gThread->mName = name;
+        gThread->mThreadName = name;
     }
     gThreadName = name;
 }
@@ -91,11 +91,11 @@ void *Thread::entrance(void *arg)
     LOG_ASSERT(arg, "arg never be null");
     Thread *th = static_cast<Thread *>(arg);
     gThread = th;
-    gThreadName = th->mName;
+    gThreadName = th->mThreadName;
     gThread->mKernalTid = gettid();
     gThread->mSemaphore.post();
 
-    pthread_setname_np(pthread_self(), th->mName.substr(0, 15).c_str());
+    pthread_setname_np(pthread_self(), th->mThreadName.substr(0, 15).c_str());
 
     std::function<void()> cb;
     cb.swap(th->mCb);

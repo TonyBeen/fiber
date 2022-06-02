@@ -163,7 +163,6 @@ void Scheduler::run()
                     continue;
                 }
 
-                LOGD("Find executable tasks");
                 ft = *it;
                 mFiberQueue.erase(it++);
                 ++mActiveThreadCount;
@@ -178,7 +177,6 @@ void Scheduler::run()
         }
 
         if (ft.fiberPtr && (ft.fiberPtr->getState() != Fiber::EXEC && ft.fiberPtr->getState() != Fiber::EXCEPT)) {
-            // TODO: 记录线程开始执行时间，超阈值后杀死线程
             ft.fiberPtr->resume();
             --mActiveThreadCount;
             if (ft.fiberPtr->getState() == Fiber::READY) {  // 用户主动设置协程状态为REDAY
@@ -228,7 +226,8 @@ void Scheduler::run()
             }
         }
 
-        sleep(1);
+        // for test
+        // sleep(1);
     }
 }
 

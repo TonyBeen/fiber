@@ -40,7 +40,6 @@ public:
     void start();
     void stop();
 
-
     /**
      * @brief 调度函数
      * 
@@ -93,7 +92,7 @@ private:
         }
         return needTickle;
     }
-    
+
 
 protected:
     void run();
